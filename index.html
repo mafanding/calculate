@@ -1,1 +1,257 @@
-Hello World
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>便捷计价器</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <style>
+    .disable-dbl-tap-zoom {
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container text-center">
+    </div>
+    <div class="row sticky-bottom bg-white">
+      <div class="input-group col">
+        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#counter-modal">计价器</button>
+      </div>
+    </div>
+
+    <div class="modal fade" id="counter-modal" tabindex="-1" aria-labelledby="counter-modal-label" aria-hidden="true"
+      data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="counter-modal-label">计价器</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="input-group mb-3">
+              <span class="input-group-text">金额：</span>
+              <input type="text" class="form-control" value="0" aria-label="amount" id="counter-amount" disabled
+                readonly>
+              <span class="input-group-text">数量：</span>
+              <input type="text" class="form-control" value="0" aria-label="count" id="counter-count" disabled readonly>
+            </div>
+            <div class="row mb-3" id="counter-price-btns-area">
+            </div>
+            <div class="input-group mb-3">
+              <input id="counter-new-price-input" type="number" class="form-control" placeholder="请输入按钮金额"
+                aria-label="请输入按钮金额" aria-describedby="counter-create-price-btn">
+              <button type="button" class="btn btn-primary" id="counter-create-price-btn">+</button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-danger" type="button" id="counter-zero">归零</button>
+            <button class="btn btn-danger" type="button" id="counter-reset">重置</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="counter-price-btn-setting-dialog" tabindex="-1"
+      aria-labelledby="counter-price-btn-setting-dialogLabel" aria-hidden="true" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body">
+            <div class="input-group col mb-3">
+              <input id="counter-set-price-input" type="number" class="form-control"
+                aria-describedby="counter-set-price-btn">
+              <button class="btn btn-primary" type="button" id="counter-set-price-btn">修改价格</button>
+            </div>
+            <div class="input-group col mb-3">
+              <input id="counter-set-count-input" type="number" class="form-control"
+                aria-describedby="counter-set-count-btn">
+              <button class="btn btn-primary" type="button" id="counter-set-count-btn">修改数量</button>
+            </div>
+            <div class="input-group mb-3">
+              <input id="counter-append-count-input" type="number" class="form-control" placeholder="请输入增加或减少的数量"
+                aria-label="请输入增加或减少的数量" aria-describedby="append-btn-count">
+              <button type="button" class="btn btn-primary" id="counter-add-count-btn"> + </button>
+              <button type="button" class="btn btn-primary" id="counter-minus-count-btn"> - </button>
+            </div>
+            <div class="input-group col mb-3">
+              <button type="button" class="btn btn-danger" id="counter-delete-price-btn">删除该按钮</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script>
+  const longpress = {
+    pressed: false,
+    longpressed: false,
+    presstime: 500
+  };
+  $(document).on("click", "#counter-create-price-btn", function () {
+    let newPrice = $("#counter-new-price-input").val();
+    if (newPrice != "") {
+      let btn = $(`<div class="col-3 mb-3"><button type="button" class="btn btn-primary price-btn disable-dbl-tap-zoom">` + newPrice + ` <span class="badge text-bg-secondary">0</span></button></div>`);
+      $("#counter-price-btns-area").append(btn);
+      $("#counter-new-price-input").val("");
+    }
+  });
+  if (!window.matchMedia("(max-width: 767px)").matches) {
+    $(document).on("mousedown", ".price-btn", function (event) {
+      let price = parseInt($(this).text());
+      let count = parseInt($(this).find("span.badge").text());
+      let _that = this;
+      longpress.longpressed = false;
+      longpress.pressed = true;
+      longpress.timeout = setTimeout(function () {
+        longpress.longpressed = true;
+        $('#counter-price-btn-setting-dialog').data("price", price);
+        $('#counter-price-btn-setting-dialog').data("count", count);
+        $('#counter-price-btn-setting-dialog').data("target", _that);
+        $("#counter-set-price-input").val(price);
+        $("#counter-set-count-input").val(count);
+        $("#counter-append-count-input").val("");
+        $('#counter-price-btn-setting-dialog').modal("show");
+      }, longpress.presstime);
+    });
+    $(document).on("mouseleave", ".price-btn", function (event) {
+      clearTimeout(longpress.timeout);
+      longpress.pressed = false;
+    });
+    $(document).on("mouseup", ".price-btn", function (event) {
+      clearTimeout(longpress.timeout);
+      if (!longpress.longpressed && longpress.pressed) {
+        longpress.pressed = false;
+        let price = parseInt($(this).text());
+        $("#counter-count").val(parseInt($("#counter-count").val()) + 1);
+        $("#counter-amount").val(parseInt($("#counter-amount").val()) + price);
+        $(this).find("span.badge").text(parseInt($(this).find("span.badge").text()) + 1);
+      }
+    });
+  } else {
+    $(document).on("touchstart", ".price-btn", function (event) {
+      let price = parseInt($(this).text());
+      let count = parseInt($(this).find("span.badge").text());
+      let _that = this;
+      longpress.longpressed = false;
+      longpress.pressed = true;
+      longpress.timeout = setTimeout(function () {
+        longpress.longpressed = true;
+        $('#counter-price-btn-setting-dialog').data("price", price);
+        $('#counter-price-btn-setting-dialog').data("count", count);
+        $('#counter-price-btn-setting-dialog').data("target", _that);
+        $("#counter-set-price-input").val(price);
+        $("#counter-set-count-input").val(count);
+        $("#counter-append-count-input").val("");
+        $('#counter-price-btn-setting-dialog').modal("show");
+      }, longpress.presstime);
+    });
+    $(document).on("touchmove", ".price-btn", function (event) {
+      clearTimeout(longpress.timeout);
+      longpress.pressed = false;
+    });
+    $(document).on("touchend", ".price-btn", function (event) {
+      clearTimeout(longpress.timeout);
+      if (!longpress.longpressed && longpress.pressed) {
+        longpress.pressed = false;
+        let price = parseInt($(this).text());
+        $("#counter-count").val(parseInt($("#counter-count").val()) + 1);
+        $("#counter-amount").val(parseInt($("#counter-amount").val()) + price);
+        $(this).find("span.badge").text(parseInt($(this).find("span.badge").text()) + 1);
+      }
+    });
+  }
+  $(document).on("click", "#counter-delete-price-btn", function (event) {
+    let price = parseInt($('#counter-price-btn-setting-dialog').data("price"));
+    let count = parseInt($('#counter-price-btn-setting-dialog').data("count"));
+    $($('#counter-price-btn-setting-dialog').data("target")).parent().remove();
+    $("#counter-count").val(parseInt($("#counter-count").val()) - count);
+    $("#counter-amount").val(parseInt($("#counter-amount").val()) - count * price);
+    $('#counter-price-btn-setting-dialog').modal("hide");
+  });
+  $(document).on("click", "#counter-set-price-btn", function (event) {
+    let newprice = parseInt($("#counter-set-price-input").val());
+    if (isNaN(newprice)) {
+      return;
+    }
+    let count = parseInt($('#counter-price-btn-setting-dialog').data("count"));
+    if (isNaN(count)) {
+      count = 0;
+    }
+    let price = parseInt($('#counter-price-btn-setting-dialog').data("price"));
+    if (isNaN(price)) {
+      price = 0;
+    }
+    $("#counter-amount").val(parseInt($("#counter-amount").val()) - count * price + count * newprice);
+    $('#counter-price-btn-setting-dialog').data("target").childNodes[0].data = newprice + " ";
+    $('#counter-price-btn-setting-dialog').modal("hide");
+  });
+  $(document).on("click", "#counter-set-count-btn", function (event) {
+    let newcount = parseInt($("#counter-set-count-input").val());
+    if (isNaN(newcount)) {
+      return;
+    }
+    let price = parseInt($('#counter-price-btn-setting-dialog').data("price"));
+    if (isNaN(price)) {
+      price = 0;
+    }
+    let count = parseInt($('#counter-price-btn-setting-dialog').data("count"));
+    if (isNaN(count)) {
+      count = 0;
+    }
+    $("#counter-count").val(parseInt($("#counter-count").val()) - count + newcount);
+    $("#counter-amount").val(parseInt($("#counter-amount").val()) - count * price + newcount * price);
+    $($('#counter-price-btn-setting-dialog').data("target")).find("span.badge").text(newcount);
+    $('#counter-price-btn-setting-dialog').modal("hide");
+  });
+  $(document).on("click", "#counter-add-count-btn", function (event) {
+    let newcount = parseInt($("#counter-append-count-input").val());
+    if (isNaN(newcount)) {
+      return;
+    }
+    let count = parseInt($("#counter-set-count-input").val());
+    if (isNaN(count)) {
+      count = 0;
+    }
+    $("#counter-set-count-input").val(count + newcount);
+    $("#counter-append-count-input").val("");
+  });
+  $(document).on("click", "#counter-minus-count-btn", function (event) {
+    let newcount = parseInt($("#counter-append-count-input").val());
+    if (isNaN(newcount)) {
+      return;
+    }
+    let count = parseInt($("#counter-set-count-input").val());
+    if (isNaN(count)) {
+      count = 0;
+    }
+    $("#counter-set-count-input").val(Math.max(count - newcount, 0));
+    $("#counter-append-count-input").val("");
+  });
+  $(document).on("click", "#counter-reset", function (event) {
+    $("#counter-price-btns-area").html("");
+    $("#counter-count").val(0);
+    $("#counter-amount").val(0);
+  });
+  $(document).on("click", "#counter-zero", function (event) {
+    $("#counter-count").val(0);
+    $("#counter-amount").val(0);
+    $(".price-btn").each((i, e) => {
+      $(e).find("span.badge").text(0);
+    });
+  });
+  $(document).on("keypress", "#keyword", function (event) {
+    if (event.key === "Enter") {
+      $("#button-search").click();
+    }
+  });
+  </script>
+
+</html>
